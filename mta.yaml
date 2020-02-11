@@ -1,0 +1,92 @@
+ID: testCAPv3NodeJS
+_schema-version: '2.1'
+description: testCAPv3NodeJS
+parameters:
+  deploy_mode: html5-repo
+version: 0.0.1
+modules:
+  - name: testCAPv3NodeJS_appRouter
+    type: approuter.nodejs
+    path: testCAPv3NodeJS_appRouter
+    parameters:
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: testCAPv3NodeJS_html5_repo_runtime
+      - name: srv_api
+        group: destinations
+        properties:
+          forwardAuthToken: true
+          name: srv_api
+          url: '~{url}'
+      - name: uaa_testCAPv3NodeJS
+  - name: testCAPv3NodeJS_ui_deployer
+    type: com.sap.html5.application-content
+    path: testCAPv3NodeJS_ui_deployer
+    requires:
+      - name: testCAPv3NodeJS_html5_repo_host
+    build-parameters:
+      requires:
+        - name: web_V4
+          artifacts:
+            - './*'
+          target-path: resources/web_V4
+        - name: webV4_VendorCatches
+          artifacts:
+            - './*'
+          target-path: resources/webV4_VendorCatches
+  - name: testCAPv3NodeJS-db
+    type: hdb
+    path: db
+    parameters:
+      memory: 256M
+      disk-quota: 256M
+    requires:
+      - name: testCAPv3NodeJS-db-hdi-container
+  - name: testCAPv3NodeJS-srv
+    type: nodejs
+    path: srv
+    parameters:
+      memory: 512M
+      disk-quota: 256M
+    provides:
+      - name: srv_api
+        properties:
+          url: '${default-url}'
+    requires:
+      - name: testCAPv3NodeJS-db-hdi-container
+  - name: web_V4
+    type: html5
+    path: web_V4
+    build-parameters:
+      builder: grunt
+      supported-platforms: []
+      build-result: dist
+  - name: webV4_VendorCatches
+    type: html5
+    path: webV4_VendorCatches
+    build-parameters:
+      builder: grunt
+      supported-platforms: []
+      build-result: dist
+resources:
+  - name: testCAPv3NodeJS_html5_repo_runtime
+    parameters:
+      service-plan: app-runtime
+      service: html5-apps-repo
+    type: org.cloudfoundry.managed-service
+  - name: testCAPv3NodeJS_html5_repo_host
+    parameters:
+      service-plan: app-host
+      service: html5-apps-repo
+    type: org.cloudfoundry.managed-service
+  - name: testCAPv3NodeJS-db-hdi-container
+    type: com.sap.xs.hdi-container
+    properties:
+      hdi-container-name: '${service-name}'
+  - name: uaa_testCAPv3NodeJS
+    parameters:
+      path: ./xs-security.json
+      service-plan: application
+      service: xsuaa
+    type: org.cloudfoundry.managed-service
